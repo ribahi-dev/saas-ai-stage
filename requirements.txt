@@ -1,0 +1,27 @@
+# Requirements -- Plateforme Intelligente de Recommandation de Stages
+
+# Framework Django & API
+Django==5.0.6
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.3.1
+django-cors-headers==4.3.1
+django-filter==24.2
+
+# Base de donnees (PostgreSQL)
+# psycopg3 -- seul driver compatible Python 3.14 sur Windows
+psycopg[binary]==3.3.3
+
+# Variables d environnement
+python-dotenv==1.0.1
+
+# Traitement des fichiers & NLP
+pdfplumber==0.11.0
+scikit-learn==1.5.0
+Pillow==10.3.0
+requests==2.32.3
+beautifulsoup4==4.12.3
+python-docx==1.1.2
+google-generativeai==0.8.5
+
+# Utilitaires
+gunicorn==22.0.0
