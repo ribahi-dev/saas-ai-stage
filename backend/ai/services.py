@@ -73,14 +73,19 @@ class NLPService:
         "python", "django", "flask", "fastapi", "java", "spring", "php", "laravel",
         "javascript", "typescript", "react", "next.js", "vue", "angular",
         "node.js", "express", "nestjs", "html", "css", "tailwind", "bootstrap",
+        "c", "c++", "c#", ".net", "asp.net", "symfony", "wordpress", "shopify",
         "sql", "mysql", "postgresql", "mongodb", "redis", "firebase",
-        "docker", "kubernetes", "git", "github", "gitlab", "linux",
-        "aws", "azure", "gcp", "power bi", "excel", "tableau",
+        "oracle", "sql server", "nosql", "docker", "kubernetes", "git", "github",
+        "gitlab", "linux", "devops", "jenkins", "github actions",
+        "aws", "azure", "gcp", "power bi", "excel", "tableau", "looker",
         "pandas", "numpy", "scikit-learn", "machine learning", "deep learning",
         "tensorflow", "pytorch", "nlp", "data analysis", "data engineering",
+        "etl", "big data", "spark", "hadoop", "business intelligence",
         "api rest", "graphql", "testing", "pytest", "selenium",
+        "figma", "ux", "ui", "flutter", "dart", "android", "ios", "react native",
+        "cybersecurity", "securite", "network", "reseaux",
         "agile scrum", "communication", "problem solving", "leadership",
-        "francais", "anglais", "arabic",
+        "francais", "anglais", "arabic", "crm", "erp", "odoo",
     ]
 
     MOROCCAN_CITIES = {
@@ -102,10 +107,22 @@ class NLPService:
         "product_design": ["figma", "ux", "ui", "design", "prototype"],
     }
 
+    ROLE_PATTERNS = {
+        "Developpeur Full Stack": ["full stack", "fullstack", "django react", "mern", "mean"],
+        "Developpeur Backend": ["backend", "api", "django", "spring", "laravel", "fastapi", "node.js"],
+        "Developpeur Frontend": ["frontend", "react", "angular", "vue", "javascript", "typescript"],
+        "Data Analyst": ["data analyst", "power bi", "tableau", "excel", "sql", "analyse de donnees"],
+        "Data Scientist": ["data scientist", "machine learning", "deep learning", "pandas", "scikit-learn"],
+        "Developpeur Mobile": ["mobile", "flutter", "android", "ios", "react native"],
+        "DevOps Junior": ["devops", "docker", "kubernetes", "jenkins", "ci cd"],
+        "UX/UI Designer": ["figma", "ux", "ui", "prototype"],
+    }
+
     def __init__(self):
         if not SKLEARN_AVAILABLE:
-            raise ImportError("scikit-learn n'est pas installe.")
-        self.vectorizer = TfidfVectorizer(**self.VECTORIZER_PARAMS)
+            self.vectorizer = None
+        else:
+            self.vectorizer = TfidfVectorizer(**self.VECTORIZER_PARAMS)
 
     def normalize_text(self, text: str) -> str:
         text = (text or "").lower()
@@ -133,6 +150,16 @@ class NLPService:
                 normalized_skills.append(canonical)
                 seen.add(canonical)
         return normalized_skills
+
+    def infer_target_titles(self, text: str, skills: Iterable[str] | None = None) -> list[str]:
+        haystack = self.normalize_text(f"{text or ''} {' '.join(skills or [])}")
+        scores: list[tuple[str, int]] = []
+        for role, keywords in self.ROLE_PATTERNS.items():
+            score = sum(1 for keyword in keywords if self.normalize_text(keyword) in haystack)
+            if score:
+                scores.append((role, score))
+        scores.sort(key=lambda item: item[1], reverse=True)
+        return [role for role, _ in scores[:3]]
 
     def normalize_list_text(self, values: Iterable[str] | None) -> list[str]:
         if not values:
@@ -193,27 +220,29 @@ class NLPService:
         return deduped
 
     def extract_profile_with_ai(self, cv_text: str) -> dict[str, object]:
-        api_key = os.environ.get("GEMINI_API_KEY")
-        if not api_key:
+        from core.gemini import configure_gemini_client, gemini_model_name
+
+        if not configure_gemini_client():
             heuristic_skills = self.extract_skills_from_text(cv_text)
             return {
                 "skills": heuristic_skills,
                 "experience_level": self.estimate_experience_level(cv_text),
                 "projects": self.extract_project_lines(cv_text),
+                "target_job_titles": self.infer_target_titles(cv_text, heuristic_skills),
             }
 
         try:
             import google.generativeai as genai
 
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            model = genai.GenerativeModel(gemini_model_name())
             prompt = f"""
             Analyse ce CV d'etudiant et retourne uniquement un JSON valide.
             Format attendu:
             {{
               "skills": ["skill1", "skill2"],
               "experience_level": "Junior|Stage|Confirme",
-              "projects": ["projet 1", "projet 2"]
+              "projects": ["projet 1", "projet 2"],
+              "target_job_titles": ["Developpeur Full Stack", "Data Analyst"]
             }}
             CV:
             {cv_text[:3500]}
@@ -232,6 +261,7 @@ class NLPService:
                 "skills": list(dict.fromkeys(skills)),
                 "experience_level": data.get("experience_level") or self.estimate_experience_level(cv_text),
                 "projects": data.get("projects") or self.extract_project_lines(cv_text),
+                "target_job_titles": data.get("target_job_titles") or self.infer_target_titles(cv_text, skills),
             }
         except Exception as exc:
             logger.error("Erreur IA Gemini sur le CV: %s", exc)
@@ -240,6 +270,7 @@ class NLPService:
                 "skills": heuristic_skills,
                 "experience_level": self.estimate_experience_level(cv_text),
                 "projects": self.extract_project_lines(cv_text),
+                "target_job_titles": self.infer_target_titles(cv_text, heuristic_skills),
             }
 
     def estimate_experience_level(self, cv_text: str) -> str:
@@ -273,7 +304,7 @@ class NLPService:
         return self.normalize_text(" ".join(chunk for chunk in chunks if chunk))
 
     def compute_similarity(self, cv_text: str, offer_texts: list[str]) -> list[float]:
-        if not cv_text or not offer_texts:
+        if not cv_text or not offer_texts or not self.vectorizer:
             return [0.0] * len(offer_texts)
 
         corpus = [cv_text] + offer_texts
@@ -335,8 +366,58 @@ class NLPService:
 
         return min(bonus, 0.12)
 
-    def blend_score(self, semantic_score: float, skill_overlap: float, context_bonus: float) -> float:
-        blended = (semantic_score * 0.65) + (skill_overlap * 0.30) + context_bonus
+    def compute_title_match(self, student_profile, offer, offer_text: str) -> float:
+        targets = self.normalize_list_text(getattr(student_profile, "target_job_titles", []))
+        if not targets:
+            targets = self.normalize_list_text(
+                self.infer_target_titles(getattr(student_profile, "cv_text_extracted", ""))
+            )
+        if not targets:
+            return 0.0
+        title_text = self.normalize_text(f"{offer.title} {offer_text[:400]}")
+        hits = 0
+        for target in targets:
+            target_tokens = [token for token in target.split() if len(token) > 2]
+            if target in title_text or any(token in title_text for token in target_tokens):
+                hits += 1
+        return min(hits / max(len(targets), 1), 1.0)
+
+    def compute_recency_bonus(self, offer) -> float:
+        published = getattr(offer, "published_date", None) or getattr(offer, "created_at", None)
+        if not published:
+            return 0.0
+        try:
+            from django.utils import timezone
+
+            today = timezone.now().date()
+            if hasattr(published, "date"):
+                published = published.date()
+            age = max((today - published).days, 0)
+        except Exception:
+            return 0.0
+        if age <= 7:
+            return 0.04
+        if age <= 30:
+            return 0.025
+        if age <= 60:
+            return 0.01
+        return 0.0
+
+    def blend_score(
+        self,
+        semantic_score: float,
+        skill_overlap: float,
+        title_match: float,
+        context_bonus: float,
+        recency_bonus: float = 0.0,
+    ) -> float:
+        blended = (
+            (semantic_score * 0.45)
+            + (skill_overlap * 0.35)
+            + (title_match * 0.15)
+            + context_bonus
+            + recency_bonus
+        )
         return max(0.0, min(round(blended, 4), 1.0))
 
     def summarize_recommendation(
@@ -386,6 +467,8 @@ class NLPService:
         overlap_score: float,
         context_bonus: float,
         preference_bonus: float,
+        title_match: float,
+        recency_bonus: float,
         final_score: float,
         matching_skills: list[str],
         missing_skills: list[str],
@@ -395,6 +478,8 @@ class NLPService:
             "skill_overlap_score": round(overlap_score * 100, 1),
             "context_bonus": round(context_bonus * 100, 1),
             "preference_bonus": round(preference_bonus * 100, 1),
+            "title_match_score": round(title_match * 100, 1),
+            "recency_bonus": round(recency_bonus * 100, 1),
             "matching_skills": matching_skills[:5],
             "missing_skills": missing_skills[:5],
             "score_band": (
@@ -479,11 +564,15 @@ class NLPService:
         extracted_skills = profile.get("skills", []) if isinstance(profile, dict) else []
         experience_level = profile.get("experience_level", "Junior") if isinstance(profile, dict) else "Junior"
         projects = profile.get("projects", []) if isinstance(profile, dict) else []
+        inferred_titles = profile.get("target_job_titles", []) if isinstance(profile, dict) else []
 
         heuristic_skills = self.extract_skills_from_text(cv_text)
         merged_skills = list(dict.fromkeys([*heuristic_skills, *extracted_skills]))
+        if not inferred_titles:
+            inferred_titles = self.infer_target_titles(cv_text, merged_skills)
         weighted_skill_text = " ".join(merged_skills * 3)
-        enriched_cv_text = self.normalize_text(" ".join([cv_text, weighted_skill_text, " ".join(projects)]))
+        weighted_title_text = " ".join(str(title) for title in inferred_titles) * 2
+        enriched_cv_text = self.normalize_text(" ".join([cv_text, weighted_skill_text, weighted_title_text, " ".join(projects)]))
 
         student_profile.cv_text_extracted = enriched_cv_text
         student_profile.cv_vector_json = json.dumps(
@@ -491,18 +580,26 @@ class NLPService:
                 "skills": merged_skills,
                 "experience_level": str(experience_level),
                 "projects": list(projects)[:4],
+                "target_job_titles": list(inferred_titles)[:3],
             }
         )
         student_profile.extracted_skills = merged_skills
         student_profile.experience_level = str(experience_level)
         student_profile.projects = list(projects)[:4]
+        update_fields = [
+            "cv_text_extracted",
+            "cv_vector_json",
+            "extracted_skills",
+            "experience_level",
+            "projects",
+        ]
+        if inferred_titles and not student_profile.target_job_titles:
+            student_profile.target_job_titles = list(inferred_titles)[:3]
+            update_fields.append("target_job_titles")
+
         student_profile.save(
             update_fields=[
-                "cv_text_extracted",
-                "cv_vector_json",
-                "extracted_skills",
-                "experience_level",
-                "projects",
+                *update_fields,
             ]
         )
 
@@ -523,7 +620,15 @@ class NLPService:
             overlap_score = self.compute_skill_overlap(merged_skills, offer_skills)
             context_bonus = self.compute_context_bonus(student_profile, offer)
             preference_bonus = self.compute_preference_bonus(student_profile, offer, offer_text)
-            final_score = self.blend_score(semantic_score, overlap_score, context_bonus + preference_bonus)
+            title_match = self.compute_title_match(student_profile, offer, offer_text)
+            recency_bonus = self.compute_recency_bonus(offer)
+            final_score = self.blend_score(
+                semantic_score,
+                overlap_score,
+                title_match,
+                context_bonus + preference_bonus,
+                recency_bonus,
+            )
             matching_skills = [skill for skill in offer_skills if skill in set(merged_skills)]
             missing_skills = [skill for skill in offer_skills if skill not in set(merged_skills)]
 
@@ -550,6 +655,8 @@ class NLPService:
                         overlap_score,
                         context_bonus,
                         preference_bonus,
+                        title_match,
+                        recency_bonus,
                         final_score,
                         matching_skills,
                         missing_skills,

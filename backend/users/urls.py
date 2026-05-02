@@ -2,6 +2,7 @@
 users/urls.py — Routes de l'app users
 
   POST   /api/users/register/        → Créer un compte
+  POST   /api/users/google/           → Connexion / inscription Google (ID JWT + role opt.)
   POST   /api/users/login/           → Obtenir tokens JWT
   POST   /api/users/token/refresh/   → Rafraîchir l'access token
   GET    /api/users/me/              → Infos du compte connecté
@@ -18,6 +19,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .views import (
     RegisterView,
+    GoogleAuthView,
     MeView,
     StudentProfileView,
     CompanyProfileView,
@@ -27,6 +29,7 @@ from .views import (
 urlpatterns = [
     # ── Authentification ──────────────────────────────────────
     path('register/',       RegisterView.as_view(),      name='user-register'),
+    path('google/',         GoogleAuthView.as_view(),      name='user-google-auth'),
     path('login/',          TokenObtainPairView.as_view(), name='user-login'),
     path('token/refresh/',  TokenRefreshView.as_view(),  name='token-refresh'),
 

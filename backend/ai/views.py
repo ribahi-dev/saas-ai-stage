@@ -2,8 +2,9 @@
 ai/views.py - API views for recommendations and AI helpers
 """
 
-import os
+import logging
 
+from core.gemini import configure_gemini_client, gemini_model_name
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,7 +12,12 @@ from rest_framework.views import APIView
 from .models import Recommendation
 from .serializers import RecommendationSerializer
 from .services import NLPService
+from .throttles import GeminiUserThrottle
 from users.views import IsStudent
+
+logger = logging.getLogger(__name__)
+
+INTERVIEW_HISTORY_MAX = 24
 
 
 class RecommendationListView(generics.ListAPIView):
@@ -103,9 +109,10 @@ class RefreshRecommendationsView(APIView):
                     "offers_analyzed": count,
                 }
             )
-        except Exception as exc:
+        except Exception:
+            logger.exception("Echec recalcul recommandations.")
             return Response(
-                {"detail": f"Erreur lors du calcul : {exc}"},
+                {"detail": "Erreur lors du calcul des recommandations."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -135,9 +142,9 @@ class AIStatsView(APIView):
 
 class GenerateCoverLetterView(APIView):
     permission_classes = [IsStudent]
+    throttle_classes = [GeminiUserThrottle]
 
     def post(self, request, offer_id):
-        import google.generativeai as genai
         from offers.models import InternshipOffer
 
         student = request.user.student_profile
@@ -153,13 +160,13 @@ class GenerateCoverLetterView(APIView):
         except InternshipOffer.DoesNotExist:
             return Response({"detail": "Offre introuvable."}, status=status.HTTP_404_NOT_FOUND)
 
-        api_key = os.environ.get("GEMINI_API_KEY")
-        if not api_key:
+        if not configure_gemini_client():
             return Response({"detail": "Cle API IA manquante."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         try:
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            import google.generativeai as genai
+
+            model = genai.GenerativeModel(gemini_model_name())
 
             student_name = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
             student_skills = ", ".join(student.extracted_skills or [])
@@ -196,35 +203,38 @@ class GenerateCoverLetterView(APIView):
                     "cover_letter": response.text.strip(),
                 }
             )
-        except Exception as exc:
+        except Exception:
+            logger.exception("Echec generation lettre Gemini.")
             return Response(
-                {"detail": f"Erreur IA : {exc}"},
+                {"detail": "Erreur lors de la generation de la lettre. Reessayez plus tard."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
 class InterviewBotView(APIView):
     permission_classes = [IsStudent]
+    throttle_classes = [GeminiUserThrottle]
 
     def post(self, request, offer_id):
-        import google.generativeai as genai
         from offers.models import InternshipOffer
 
-        student_message = request.data.get("message", "")
-        history = request.data.get("history", [])
+        student_message = (request.data.get("message") or "")[:4000]
+        history = request.data.get("history") or []
+        if isinstance(history, list) and len(history) > INTERVIEW_HISTORY_MAX:
+            history = history[-INTERVIEW_HISTORY_MAX:]
 
         try:
             offer = InternshipOffer.objects.get(id=offer_id, status="active")
         except InternshipOffer.DoesNotExist:
             return Response({"detail": "Offre introuvable."}, status=status.HTTP_404_NOT_FOUND)
 
-        api_key = os.environ.get("GEMINI_API_KEY")
-        if not api_key:
+        if not configure_gemini_client():
             return Response({"detail": "Cle API IA manquante."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         try:
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            import google.generativeai as genai
+
+            model = genai.GenerativeModel(gemini_model_name())
 
             system_context = f"""
             Tu es un recruteur technique senior chez '{offer.company.company_name}'.
@@ -242,8 +252,11 @@ class InterviewBotView(APIView):
 
             conversation_parts = [system_context, "\n\nDebut de l'entretien:\n"]
             for msg in history:
+                if not isinstance(msg, dict):
+                    continue
+                text = (msg.get("text") or "")[:2000]
                 role = "Recruteur" if msg.get("role") == "bot" else "Candidat"
-                conversation_parts.append(f"{role}: {msg.get('text', '')}")
+                conversation_parts.append(f"{role}: {text}")
 
             if student_message:
                 conversation_parts.append(f"Candidat: {student_message}")
@@ -252,9 +265,10 @@ class InterviewBotView(APIView):
             response = model.generate_content("\n".join(conversation_parts))
 
             return Response({"bot_message": response.text.strip(), "offer_title": offer.title})
-        except Exception as exc:
+        except Exception:
+            logger.exception("Echec bot entretien Gemini.")
             return Response(
-                {"detail": f"Erreur IA : {exc}"},
+                {"detail": "Erreur lors de la simulation d'entretien. Reessayez plus tard."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 

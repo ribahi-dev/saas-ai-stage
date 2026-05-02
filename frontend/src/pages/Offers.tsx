@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 interface Offer {
   id: number;
   title: string;
+  offer_type: string;
   description: string;
   required_skills: string;
   location: string | null;
@@ -17,6 +18,9 @@ interface Offer {
     city: string | null;
     industry: string | null;
   };
+  source_url?: string | null;
+  source_platform?: string | null;
+  published_date?: string | null;
   created_at: string;
 }
 
@@ -57,11 +61,16 @@ const Offers = () => {
       (offer.location ?? offer.company_info.city ?? '').toLowerCase().includes(locationFilter.toLowerCase())
     );
 
-  const handleApply = async (offerId: number) => {
+  const handleApply = async (offer: Offer) => {
     if (!user || user.role !== 'student') return;
 
+    if (offer.source_url) {
+      window.open(offer.source_url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     try {
-      await api.post(`/offers/${offerId}/apply/`, {});
+      await api.post(`/offers/${offer.id}/apply/`, {});
       window.alert('Candidature envoyee avec succes.');
     } catch (error) {
       console.error('Erreur lors de la candidature:', error);
@@ -75,7 +84,7 @@ const Offers = () => {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Offres de Stage</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">Stages et jobs reels</h1>
 
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
         <div className="grid md:grid-cols-2 gap-4">
@@ -122,18 +131,25 @@ const Offers = () => {
                   <p className="text-blue-600 font-medium mb-2">
                     {offer.company_info.company_name}
                   </p>
-                  <div className="flex items-center text-sm text-gray-600 space-x-4 flex-wrap">
+                  <div className="flex items-center text-sm text-gray-600 gap-x-4 gap-y-2 flex-wrap">
+                    <span className="bg-slate-100 text-slate-700 px-2 py-1 rounded-full">
+                      {offer.offer_type}
+                    </span>
                     <span>{offer.location || offer.company_info.city || 'Non specifie'}</span>
                     {offer.duration_months ? <span>{offer.duration_months} mois</span> : null}
                     {offer.is_paid && offer.salary ? <span>{offer.salary} MAD/mois</span> : null}
+                    {offer.source_platform ? <span>Source: {offer.source_platform}</span> : null}
+                    {offer.published_date ? <span>Publiee le {offer.published_date}</span> : null}
                   </div>
                 </div>
                 <button
-                  onClick={() => void handleApply(offer.id)}
+                  onClick={() => void handleApply(offer)}
                   disabled={!user || user.role !== 'student'}
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
-                  {user?.role === 'student' ? 'Postuler' : 'Connexion requise'}
+                  {user?.role === 'student'
+                    ? offer.source_url ? 'Postuler sur la source' : 'Postuler'
+                    : 'Connexion requise'}
                 </button>
               </div>
 
@@ -151,6 +167,16 @@ const Offers = () => {
                     </span>
                   ))}
                 </div>
+                {offer.source_url ? (
+                  <a
+                    href={offer.source_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block mt-4 text-sm font-medium text-blue-600 hover:text-blue-700"
+                  >
+                    Voir l&apos;offre originale
+                  </a>
+                ) : null}
               </div>
             </div>
           ))

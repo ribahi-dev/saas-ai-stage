@@ -16,6 +16,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (username: string, password: string) => Promise<void>;
+  loginWithGoogle: (credential: string, role?: 'student' | 'company') => Promise<void>;
   register: (userData: Record<string, unknown>) => Promise<void>;
   logout: () => void;
   loading: boolean;
@@ -73,8 +74,37 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     await fetchUser();
   };
 
+  const loginWithGoogle = async (
+    credential: string,
+    role?: 'student' | 'company',
+  ) => {
+    setLoading(true);
+    try {
+      const payload: Record<string, string> = { credential };
+      if (role) payload.role = role;
+      const response = await api.post('/users/google/', payload);
+      const { access, refresh } = response.data as { access: string; refresh: string };
+      localStorage.setItem('access_token', access);
+      localStorage.setItem('refresh_token', refresh);
+      await fetchUser();
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const register = async (userData: Record<string, unknown>) => {
-    await api.post('/users/register/', userData);
+    setLoading(true);
+    try {
+      const response = await api.post('/users/register/', userData);
+      const { access, refresh } = response.data as { access?: string; refresh?: string };
+      if (access && refresh) {
+        localStorage.setItem('access_token', access);
+        localStorage.setItem('refresh_token', refresh);
+        await fetchUser();
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = () => {
@@ -88,6 +118,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       value={{
         user,
         login,
+        loginWithGoogle,
         register,
         logout,
         loading,

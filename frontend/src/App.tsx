@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
@@ -49,8 +50,10 @@ const DashboardRoute = () => {
   return <StudentDashboard />;
 };
 
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';
+
 function App() {
-  return (
+  const routes = (
     <AuthProvider>
       <Layout>
         <Routes>
@@ -69,6 +72,11 @@ function App() {
       </Layout>
     </AuthProvider>
   );
+
+  if (googleClientId.trim()) {
+    return <GoogleOAuthProvider clientId={googleClientId.trim()}>{routes}</GoogleOAuthProvider>;
+  }
+  return routes;
 }
 
 export default App;

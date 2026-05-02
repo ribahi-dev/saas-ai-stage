@@ -1,13 +1,54 @@
 import { useState } from 'react';
 import type { AxiosError } from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
+import GoogleAuthButton, { isGoogleAuthConfigured } from '../components/GoogleAuthButton';
 import { useAuth } from '../contexts/AuthContext';
 
 interface RegisterErrorResponse {
   detail?: string;
   email?: string[];
   password?: string[];
+  password2?: string[];
   username?: string[];
+  non_field_errors?: string[];
+  role?: string[];
+  [key: string]: string[] | string | undefined;
+}
+
+function extractRegisterError(payload?: RegisterErrorResponse): string {
+  if (!payload) {
+    return "Erreur lors de l'inscription.";
+  }
+
+  if (payload.detail) {
+    return payload.detail;
+  }
+
+  if (payload.non_field_errors?.length) {
+    return payload.non_field_errors[0];
+  }
+
+  const prioritizedKeys = ['email', 'username', 'password', 'password2', 'role'];
+  for (const key of prioritizedKeys) {
+    const value = payload[key];
+    if (Array.isArray(value) && value.length > 0) {
+      return value[0];
+    }
+    if (typeof value === 'string' && value.trim()) {
+      return value;
+    }
+  }
+
+  for (const value of Object.values(payload)) {
+    if (Array.isArray(value) && value.length > 0) {
+      return value[0];
+    }
+    if (typeof value === 'string' && value.trim()) {
+      return value;
+    }
+  }
+
+  return "Erreur lors de l'inscription.";
 }
 
 export default function Register() {
@@ -22,7 +63,7 @@ export default function Register() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -45,17 +86,11 @@ export default function Register() {
 
     try {
       await register(formData);
-      navigate('/login');
+      navigate('/dashboard');
     } catch (err) {
       const axiosError = err as AxiosError<RegisterErrorResponse>;
       const apiError = axiosError.response?.data;
-      setError(
-        apiError?.detail ||
-        apiError?.email?.[0] ||
-        apiError?.password?.[0] ||
-        apiError?.username?.[0] ||
-        "Erreur lors de l'inscription."
-      );
+      setError(extractRegisterError(apiError));
     } finally {
       setLoading(false);
     }
@@ -164,6 +199,40 @@ export default function Register() {
             />
           </div>
         </div>
+
+        {isGoogleAuthConfigured() ? (
+          <>
+            <div className="relative py-6">
+              <div className="absolute inset-0 flex items-center" aria-hidden>
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center">
+                <span className="px-3 text-xs uppercase tracking-wide text-secondary-foreground bg-card">
+                  Ou avec Google
+                </span>
+              </div>
+            </div>
+            <p className="text-xs text-center text-secondary-foreground mb-3">
+              Le role selectionne ci-dessus sera utilise pour votre premier compte Google.
+            </p>
+            <GoogleAuthButton
+              onSuccess={async (credential) => {
+                setError('');
+                setLoading(true);
+                try {
+                  await loginWithGoogle(credential, formData.role);
+                  navigate('/dashboard');
+                } catch (err) {
+                  const axiosErr = err as AxiosError<RegisterErrorResponse>;
+                  setError(extractRegisterError(axiosErr.response?.data));
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              onError={() => setError('Connexion Google annulee.')}
+            />
+          </>
+        ) : null}
 
         <button
           type="submit"

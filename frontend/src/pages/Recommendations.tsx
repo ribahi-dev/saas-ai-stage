@@ -64,9 +64,14 @@ const Recommendations = () => {
     }
   }, [user]);
 
-  const handleApply = async (offerId: number) => {
+  const handleApply = async (offer: RecommendationItem['offer_detail']) => {
+    if (offer.source_url) {
+      window.open(offer.source_url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     try {
-      await api.post(`/offers/${offerId}/apply/`, {});
+      await api.post(`/offers/${offer.id}/apply/`, {});
       await fetchRecommendations();
       window.alert('Candidature envoyee avec succes.');
     } catch (error) {
@@ -198,10 +203,10 @@ const Recommendations = () => {
                   <p className="text-gray-600 mb-4">{rec.offer_detail.description}</p>
                 </div>
                 <button
-                  onClick={() => void handleApply(rec.offer_detail.id)}
+                  onClick={() => void handleApply(rec.offer_detail)}
                   className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
                 >
-                  Postuler
+                  {rec.offer_detail.source_url ? 'Postuler sur la source' : 'Postuler'}
                 </button>
               </div>
 

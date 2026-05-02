@@ -14,6 +14,8 @@ Endpoints :
   PATCH  /api/offers/applications/<id>/status/  → Changer statut (entreprise)
 """
 
+import logging
+
 from rest_framework import generics, status, permissions, filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -28,6 +30,8 @@ from .serializers import (
 from .scraper import fetch_moroccan_internships
 from ai.services import NLPService
 from users.views import IsStudent, IsCompany
+
+logger = logging.getLogger(__name__)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -240,7 +244,20 @@ class MoroccanOfferScrapeView(APIView):
 
     def post(self, request):
         try:
-            scrape_stats = fetch_moroccan_internships()
+            use_ai = str(request.query_params.get("use_ai", "true")).lower() not in (
+                "0",
+                "false",
+                "no",
+            )
+            chunk_raw = request.query_params.get("ai_chunk_size")
+            chunk_size = None
+            if chunk_raw and str(chunk_raw).isdigit():
+                chunk_size = max(2, min(int(chunk_raw), 12))
+
+            scrape_stats = fetch_moroccan_internships(
+                use_scraper_ai=use_ai,
+                scraper_ai_chunk_size=chunk_size,
+            )
             refresh_payload = None
 
             if request.data.get("refresh_recommendations", True):
@@ -254,8 +271,9 @@ class MoroccanOfferScrapeView(APIView):
                 },
                 status=status.HTTP_200_OK,
             )
-        except Exception as exc:
+        except Exception:
+            logger.exception("Echec scraping Maroc (endpoint admin).")
             return Response(
-                {"detail": f"Erreur scraping Maroc: {exc}"},
+                {"detail": "Erreur lors du scraping. Consultez les logs serveur."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

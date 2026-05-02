@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import type { AxiosError } from 'axios';
 import { useNavigate } from 'react-router-dom';
+import GoogleAuthButton, { isGoogleAuthConfigured } from '../components/GoogleAuthButton';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Login() {
@@ -8,7 +10,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,6 +88,40 @@ export default function Login() {
               </button>
             </div>
           </form>
+
+          {isGoogleAuthConfigured() ? (
+            <>
+              <div className="relative my-8">
+                <div className="absolute inset-0 flex items-center" aria-hidden>
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="px-3 text-xs uppercase tracking-wide text-secondary-foreground bg-background/90">
+                    Ou avec Google
+                  </span>
+                </div>
+              </div>
+              <GoogleAuthButton
+                onSuccess={async (credential) => {
+                  setError('');
+                  setLoading(true);
+                  try {
+                    await loginWithGoogle(credential);
+                    navigate('/dashboard');
+                  } catch (err) {
+                    const ax = err as AxiosError<{ detail?: string }>;
+                    setError(
+                      ax.response?.data?.detail ||
+                        'Connexion Google refusee ou service temporairement indisponible.',
+                    );
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                onError={() => setError('Connexion Google annulee.')}
+              />
+            </>
+          ) : null}
         </div>
       </div>
     </div>

@@ -71,10 +71,18 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"password": "Les mots de passe ne correspondent pas."}
             )
-        # Vérifie que l'email n'est pas déjà utilisé
-        if User.objects.filter(email=attrs.get('email', '')).exists():
+        # Email normalise (trim + minuscules) : un seul compte par boite mail
+        raw_email = attrs.get('email') or ''
+        email = raw_email.strip().lower()
+        attrs['email'] = email
+        if email and User.objects.filter(email__iexact=email).exists():
             raise serializers.ValidationError(
-                {"email": "Cet email est déjà utilisé."}
+                {
+                    "email": (
+                        "Cet email est deja lie a un compte. Connectez-vous "
+                        "ou utilisez une autre adresse."
+                    ),
+                }
             )
         return attrs
 

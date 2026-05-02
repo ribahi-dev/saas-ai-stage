@@ -9,6 +9,8 @@ via python-dotenv. Ne jamais coder de secrets en dur dans ce fichier.
 
 import os
 from pathlib import Path
+
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 # ---------------------------------------------------------------------------
@@ -35,12 +37,19 @@ for _pg_var in ('PGPASSWORD', 'PGPASSFILE', 'PGSERVICE', 'PGSERVICEFILE',
 # 2. SÉCURITÉ
 # ─────────────────────────────────────────────────────────────────────────────
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-key-change-this')
-
-# En production, DEBUG doit être False OBLIGATOIREMENT
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
+_secret_key = os.getenv('SECRET_KEY', '').strip()
+if not _secret_key and not DEBUG:
+    raise ImproperlyConfigured(
+        "SECRET_KEY doit etre defini dans .env lorsque DEBUG=False."
+    )
+SECRET_KEY = _secret_key or 'django-insecure-dev-only-change-for-local'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = [
+    h.strip()
+    for h in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+    if h.strip()
+]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -124,12 +133,25 @@ TEMPLATES = [
 # Les credentials sont lus depuis .env → jamais en dur dans le code.
 # ─────────────────────────────────────────────────────────────────────────────
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+_db_name = os.getenv('DB_NAME', '').strip()
+if _db_name:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': _db_name,
+            'USER': os.getenv('DB_USER', 'postgres').strip() or 'postgres',
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
+            'HOST': os.getenv('DB_HOST', 'localhost').strip() or 'localhost',
+            'PORT': os.getenv('DB_PORT', '5432').strip() or '5432',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -167,6 +189,11 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': os.getenv('DRF_THROTTLE_ANON', '120/hour'),
+        'user': os.getenv('DRF_THROTTLE_USER', '4000/hour'),
+        'gemini_user': os.getenv('DRF_THROTTLE_GEMINI', '90/hour'),
+    },
 }
 
 
@@ -191,11 +218,19 @@ SIMPLE_JWT = {
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',   # Vite dev server
+    'http://127.0.0.1:5173',   # Vite dev server via IP
     'http://localhost:3000',   # Create React App (au cas où)
+    'http://127.0.0.1:3000',   # CRA via IP
+    'http://localhost:4173',   # Vite preview
+    'http://127.0.0.1:4173',   # Vite preview via IP
 ]
 
 # Autoriser l'envoi de cookies/credentials cross-origin
 CORS_ALLOW_CREDENTIALS = True
+
+# Google OAuth (web) — verifier les ID tokens JWT emis par Sign In With Google
+# Meme valeur que la "Client ID" JavaScript dans la console Google Cloud
+GOOGLE_OAUTH_CLIENT_ID = os.getenv('GOOGLE_OAUTH_CLIENT_ID', '').strip()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
