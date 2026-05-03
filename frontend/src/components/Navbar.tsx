@@ -6,6 +6,7 @@ import {
   DocumentTextIcon,
   HomeIcon,
   UserCircleIcon,
+  ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -59,6 +60,12 @@ export default function Navbar() {
                   <ChartBarIcon className="h-5 w-5" />
                   <span>Tendances</span>
                 </Link>
+                {user.role === 'admin' && (
+                  <Link to="/admin" className="text-secondary-foreground hover:text-primary transition-colors flex items-center gap-1 font-medium">
+                    <ShieldCheckIcon className="h-5 w-5" />
+                    <span>Admin</span>
+                  </Link>
+                )}
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-1 text-red-500 hover:text-red-600 transition-colors px-3 py-2 rounded-md hover:bg-red-50/50 font-medium"

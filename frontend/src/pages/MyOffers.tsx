@@ -62,6 +62,7 @@ export default function MyOffers() {
   const { user } = useAuth();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
+  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [applications, setApplications] = useState<ReceivedApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -105,24 +106,60 @@ export default function MyOffers() {
     return { active, paused, totalApplications };
   }, [offers]);
 
-  const handleCreateOffer = async (e: React.FormEvent) => {
+  const handleCreateOrUpdateOffer = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
 
     try {
-      await api.post('/offers/', {
+      const payload = {
         ...formData,
         salary: formData.is_paid ? formData.salary : null,
-      });
+      };
+
+      if (editingOffer) {
+        await api.patch(`/offers/${editingOffer.id}/`, payload);
+        window.alert('Offre mise a jour avec succes.');
+      } else {
+        await api.post('/offers/', payload);
+        window.alert('Offre creee avec succes.');
+      }
+
       setShowCreateForm(false);
+      setEditingOffer(null);
       setFormData(emptyForm);
       await fetchOffers();
-      window.alert('Offre creee avec succes.');
     } catch (error) {
-      console.error("Erreur lors de la creation de l'offre:", error);
-      window.alert("Erreur lors de la creation de l'offre.");
+      console.error("Erreur lors de la sauvegarde de l'offre:", error);
+      window.alert("Erreur lors de la sauvegarde de l'offre.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const startEditing = (offer: Offer) => {
+    setEditingOffer(offer);
+    setFormData({
+      title: offer.title,
+      description: offer.description,
+      required_skills: offer.required_skills,
+      location: offer.location || '',
+      duration_months: offer.duration_months || 6,
+      is_paid: offer.is_paid,
+      salary: offer.salary || 0,
+    });
+    setShowCreateForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeleteOffer = async (offerId: number) => {
+    if (!window.confirm('Voulez-vous vraiment supprimer cette offre definitivement ?')) return;
+    try {
+      await api.delete(`/offers/${offerId}/`);
+      setOffers(offers.filter(o => o.id !== offerId));
+      window.alert('Offre supprimee avec succes.');
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      window.alert('Erreur lors de la suppression.');
     }
   };
 
@@ -185,7 +222,15 @@ export default function MyOffers() {
             </p>
           </div>
           <button
-            onClick={() => setShowCreateForm((value) => !value)}
+            onClick={() => {
+              if (showCreateForm) {
+                setShowCreateForm(false);
+                setEditingOffer(null);
+                setFormData(emptyForm);
+              } else {
+                setShowCreateForm(true);
+              }
+            }}
             className="bg-primary text-primary-foreground px-6 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors"
           >
             {showCreateForm ? 'Fermer le formulaire' : 'Nouvelle offre'}
@@ -210,8 +255,10 @@ export default function MyOffers() {
 
       {showCreateForm ? (
         <div className="bg-white rounded-2xl shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-6">Creer une nouvelle offre</h2>
-          <form onSubmit={handleCreateOffer} className="space-y-4">
+          <h2 className="text-xl font-semibold mb-6">
+            {editingOffer ? 'Modifier l\'offre' : 'Creer une nouvelle offre'}
+          </h2>
+          <form onSubmit={handleCreateOrUpdateOffer} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Titre du poste</label>
               <input
@@ -299,11 +346,15 @@ export default function MyOffers() {
                 disabled={submitting}
                 className="bg-primary text-primary-foreground px-5 py-2.5 rounded-lg font-semibold hover:bg-primary/90 disabled:opacity-50"
               >
-                {submitting ? 'Publication...' : "Publier l'offre"}
+                {submitting ? 'Publication...' : editingOffer ? 'Sauvegarder les modifications' : "Publier l'offre"}
               </button>
               <button
                 type="button"
-                onClick={() => setShowCreateForm(false)}
+                onClick={() => {
+                  setShowCreateForm(false);
+                  setEditingOffer(null);
+                  setFormData(emptyForm);
+                }}
                 className="border border-border px-5 py-2.5 rounded-lg font-semibold hover:bg-secondary"
               >
                 Annuler
@@ -366,6 +417,20 @@ export default function MyOffers() {
                   >
                     Voir les candidatures
                   </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => startEditing(offer)}
+                      className="flex-1 border border-blue-600 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 font-semibold"
+                    >
+                      Modifier
+                    </button>
+                    <button
+                      onClick={() => handleDeleteOffer(offer.id)}
+                      className="flex-1 border border-red-600 text-red-600 px-4 py-2 rounded-lg hover:bg-red-50 font-semibold"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

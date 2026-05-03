@@ -1,0 +1,6 @@
+@echo off
+echo Lancement du backend Django...
+start cmd /k "venv\Scripts\activate && python backend\manage.py runserver 127.0.0.1:8000"
+
+echo Lancement du frontend React...
+start cmd /k "cd frontend && npx vite"

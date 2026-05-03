@@ -26,6 +26,15 @@ from .views import (
     CVUploadView,
 )
 
+from .admin_api import (
+    AdminStatsView,
+    AdminUserListView,
+    AdminUserDeleteView,
+    AdminTriggerScrapeView,
+    AdminOfferListView,
+    AdminOfferDeleteView,
+)
+
 urlpatterns = [
     # ── Authentification ──────────────────────────────────────
     path('register/',       RegisterView.as_view(),      name='user-register'),
@@ -38,4 +47,12 @@ urlpatterns = [
     path('me/student/',     StudentProfileView.as_view(), name='student-profile'),
     path('me/company/',     CompanyProfileView.as_view(), name='company-profile'),
     path('me/cv/',          CVUploadView.as_view(),       name='cv-upload'),
+
+    # ── Administration ────────────────────────────────────────
+    path('admin/stats/',    AdminStatsView.as_view(),         name='admin-stats'),
+    path('admin/users/',    AdminUserListView.as_view(),      name='admin-users'),
+    path('admin/users/<int:pk>/', AdminUserDeleteView.as_view(), name='admin-user-delete'),
+    path('admin/offers/',   AdminOfferListView.as_view(),     name='admin-offers'),
+    path('admin/offers/<int:pk>/', AdminOfferDeleteView.as_view(), name='admin-offer-delete'),
+    path('admin/scrape/',   AdminTriggerScrapeView.as_view(), name='admin-scrape'),
 ]

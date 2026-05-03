@@ -13,6 +13,7 @@ import Offers from './pages/Offers';
 import Recommendations from './pages/Recommendations';
 import MyApplications from './pages/MyApplications';
 import MyOffers from './pages/MyOffers';
+import AdminDashboard from './pages/AdminDashboard';
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { user, loading } = useAuth();
@@ -43,6 +44,10 @@ const DashboardRoute = () => {
     return <Navigate to="/login" replace />;
   }
 
+  if (user.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
+
   if (user.role === 'company') {
     return <MyOffers />;
   }
@@ -67,6 +72,7 @@ function App() {
           <Route path="/applications" element={<ProtectedRoute><MyApplications /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/market-trends" element={<ProtectedRoute><MarketTrends /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Layout>
