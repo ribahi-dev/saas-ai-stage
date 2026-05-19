@@ -16,13 +16,13 @@ python-dotenv==1.0.1
 
 # Traitement des fichiers & NLP
 pdfplumber==0.11.0
-scikit-learn==1.5.0
-Pillow==10.3.0
+scikit-learn>=1.7.2
+Pillow>=10.3.0
 requests==2.32.3
 beautifulsoup4==4.12.3
 python-docx==1.1.2
 google-generativeai==0.8.5
-google-auth==2.27.2
+google-auth>=2.27.0
 
 # Utilitaires
 gunicorn==22.0.0
