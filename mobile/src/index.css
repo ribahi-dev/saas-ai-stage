@@ -1,0 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #f8fafc;
+    --foreground: #0f172a;
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    --primary: #4f46e5;
+    --primary-foreground: #ffffff;
+    --secondary: #f1f5f9;
+    --secondary-foreground: #1e293b;
+    --accent: #c084fc;
+    --border: #e2e8f0;
+    --ring: #4f46e5;
+    --radius: 1rem;
+  }
+
+  .dark {
+    --background: #0B0E14;
+    --foreground: #f8fafc;
+    --card: #151A23;
+    --card-foreground: #f8fafc;
+    --primary: #6366f1;
+    --primary-foreground: #ffffff;
+    --secondary: #1e293b;
+    --secondary-foreground: #f8fafc;
+    --accent: #a855f7;
+    --border: #1e293b;
+    --ring: #6366f1;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-[color:var(--border)];
+  }
+  body {
+    @apply bg-[color:var(--background)] text-[color:var(--foreground)] antialiased font-sans transition-colors duration-300;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/70 dark:bg-[#151A23]/70 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-xl;
+  }
+  .glass-card {
+    @apply bg-white/40 dark:bg-[#1A202C]/40 backdrop-blur-xl border border-white/50 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)];
+  }
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+  }
+  .input-field {
+    @apply w-full bg-white/50 dark:bg-[#1A202C]/50 border border-[color:var(--border)] rounded-lg px-4 py-2.5 text-sm text-[color:var(--foreground)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] transition-all backdrop-blur-sm;
+  }
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out both;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* Animations customisées */
+@keyframes blob {
+  0% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
