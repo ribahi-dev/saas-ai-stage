@@ -60,7 +60,7 @@ class OfferWorkflowTests(APITestCase):
         )
         self.company = CompanyProfile.objects.create(
             user=self.company_user,
-            company_name="StageConnect Flow",
+            company_name="StageMatch Flow",
         )
 
     def offer_payload(self):

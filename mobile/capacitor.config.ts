@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.stageconnect.app',
-  appName: 'StageConnect',
+  appId: 'com.stagematchai.app',
+  appName: 'StageMatch AI',
   webDir: 'dist'
 };
 

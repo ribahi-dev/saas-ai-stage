@@ -9,7 +9,7 @@ export default function Home() {
       <section className="glass-card rounded-3xl p-8 md:p-12 overflow-hidden relative">
         <div className="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-primary/10 to-transparent pointer-events-none"></div>
         <div className="relative max-w-3xl">
-          <p className="text-sm uppercase tracking-[0.25em] text-secondary-foreground">AI Intern Match</p>
+          <p className="text-sm uppercase tracking-[0.25em] text-secondary-foreground">StageMatch AI</p>
           <h1 className="text-4xl md:text-6xl font-heading font-bold mt-4 leading-tight">
             La plateforme qui rapproche les etudiants des bonnes offres.
           </h1>

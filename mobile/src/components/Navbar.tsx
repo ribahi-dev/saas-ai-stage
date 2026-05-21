@@ -38,7 +38,7 @@ export default function Navbar() {
                   <AcademicCapIcon className="h-6 w-6 text-primary" />
                 </div>
                 <span className="font-heading font-bold text-xl tracking-tight">
-                  AI Intern<span className="text-primary">Match</span>
+                  StageMatch <span className="text-primary">AI</span>
                 </span>
               </Link>
             </div>
@@ -103,7 +103,7 @@ export default function Navbar() {
         <Link to="/" className="flex items-center gap-2">
           <AcademicCapIcon className="h-6 w-6 text-primary animate-pulse" />
           <span className="font-heading font-bold text-lg tracking-tight">
-            AI Intern<span className="text-primary">Match</span>
+            StageMatch <span className="text-primary">AI</span>
           </span>
         </Link>
 

@@ -94,7 +94,7 @@ class AdminApiTests(APITestCase):
         )
         self.company = CompanyProfile.objects.create(
             user=self.company_user,
-            company_name="StageConnect Labs",
+            company_name="StageMatch Labs",
         )
 
     def test_admin_stats_counts_active_offers(self):
