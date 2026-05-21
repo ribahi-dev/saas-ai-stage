@@ -65,8 +65,11 @@ class RecommendationListView(generics.ListAPIView):
                 status=status.HTTP_200_OK,
             )
 
+        from offers.models import InternshipOffer
+
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
+        active_offers_count = InternshipOffer.objects.filter(status="active").count()
 
         return Response(
             {
@@ -83,6 +86,7 @@ class RecommendationListView(generics.ListAPIView):
                 },
                 "career_insights": nlp.build_career_insights(student, queryset),
                 "recommendations_count": len(serializer.data),
+                "active_offers_count": active_offers_count,
                 "recommendations": serializer.data,
             }
         )

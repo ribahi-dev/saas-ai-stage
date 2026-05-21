@@ -56,6 +56,14 @@ const DashboardRoute = () => {
 };
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';
+// Expose for debugging in the browser during development
+if (typeof window !== 'undefined') {
+  try {
+    (window as any).__VITE_GOOGLE_CLIENT_ID = googleClientId;
+  } catch (e) {
+    // ignore
+  }
+}
 
 function App() {
   const routes = (

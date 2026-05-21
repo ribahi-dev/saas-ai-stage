@@ -35,6 +35,7 @@ interface RecommendationsResponse {
   cv_uploaded: boolean;
   recommendations: RecommendationItem[];
   recommendations_count?: number;
+  active_offers_count?: number;
   extracted_profile?: {
     skills: string[];
     experience_level: string;
@@ -169,7 +170,9 @@ const Recommendations = () => {
               Aucune recommandation disponible
             </h3>
             <p className="text-gray-600">
-              L&apos;IA n&apos;a pas encore trouve de correspondance avec les offres actives.
+              {data.active_offers_count === 0
+                ? "Il n'y a actuellement aucune offre active sur la plateforme. Revenez plus tard lorsque des offres seront disponibles."
+                : "L'IA n'a pas encore trouvé de correspondance avec les offres actives. Essayez d'affiner votre profil ou réessayez plus tard."}
             </p>
           </div>
         </div>
