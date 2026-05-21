@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { AxiosError } from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getAdminStats, getAdminUsers, deleteAdminUser, getAdminOffers, deleteAdminOffer, triggerScraping } from '../services/admin';
@@ -16,15 +17,7 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  useEffect(() => {
-    if (!user || user.role !== 'admin') {
-      navigate('/');
-      return;
-    }
-    fetchData();
-  }, [user, navigate]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [statsData, usersData, offersData] = await Promise.all([
@@ -41,7 +34,15 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!user || user.role !== 'admin') {
+      navigate('/');
+      return;
+    }
+    void Promise.resolve().then(fetchData);
+  }, [user, navigate, fetchData]);
 
   const handleScrape = async () => {
     if (!window.confirm('Voulez-vous lancer le scraper d\'offres ? Cette opération peut prendre du temps.')) return;
@@ -65,9 +66,10 @@ export default function AdminDashboard() {
       setUsers(users.filter((u) => u.id !== userId));
       setSuccessMsg('Utilisateur supprimé avec succès.');
       setTimeout(() => setSuccessMsg(''), 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.response?.data?.error || 'Erreur lors de la suppression de l\'utilisateur.');
+      const apiError = err instanceof AxiosError ? err.response?.data?.error : undefined;
+      setError(apiError || 'Erreur lors de la suppression de l\'utilisateur.');
       setTimeout(() => setError(''), 3000);
     }
   };
@@ -79,7 +81,7 @@ export default function AdminDashboard() {
       setOffers(offers.filter((o) => o.id !== offerId));
       setSuccessMsg('Offre supprimée avec succès.');
       setTimeout(() => setSuccessMsg(''), 3000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       setError('Erreur lors de la suppression de l\'offre.');
       setTimeout(() => setError(''), 3000);

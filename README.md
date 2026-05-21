@@ -1,4 +1,4 @@
-# SaaS AI Stage
+# StageConnect
 
 Plateforme SaaS de recommandation intelligente de stages, orientee etudiants, stagiaires et entreprises.
 

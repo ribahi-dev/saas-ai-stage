@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { AxiosError } from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
-import GoogleAuthButton, { isGoogleAuthConfigured } from '../components/GoogleAuthButton';
+import GoogleAuthButton from '../components/GoogleAuthButton';
+import { isGoogleAuthConfigured } from '../services/authConfig';
 import { useAuth } from '../contexts/AuthContext';
 
 interface RegisterErrorResponse {

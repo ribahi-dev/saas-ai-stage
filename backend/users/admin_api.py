@@ -15,7 +15,9 @@ class AdminStatsView(APIView):
             'total_students': StudentProfile.objects.count(),
             'total_companies': CompanyProfile.objects.count(),
             'total_offers': InternshipOffer.objects.count(),
-            'active_offers': InternshipOffer.objects.filter(status='open').count(),
+            'active_offers': InternshipOffer.objects.filter(
+                status=InternshipOffer.Status.ACTIVE
+            ).count(),
             'total_applications': Application.objects.count(),
         }
         return Response(stats, status=status.HTTP_200_OK)

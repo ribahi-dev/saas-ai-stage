@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from users.models import CompanyProfile, StudentProfile
+from offers.models import InternshipOffer
 
 
 User = get_user_model()
@@ -67,3 +68,63 @@ class RegistrationTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(StudentProfile.objects.filter(user=user).exists())
+
+
+class AdminApiTests(APITestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="admin_v1",
+            email="admin.v1@example.com",
+            password="StrongPass123!",
+            role=User.Role.ADMIN,
+            is_staff=True,
+        )
+        self.student = User.objects.create_user(
+            username="student_stats",
+            email="student.stats@example.com",
+            password="StrongPass123!",
+            role=User.Role.STUDENT,
+        )
+        StudentProfile.objects.create(user=self.student)
+        self.company_user = User.objects.create_user(
+            username="company_stats",
+            email="company.stats@example.com",
+            password="StrongPass123!",
+            role=User.Role.COMPANY,
+        )
+        self.company = CompanyProfile.objects.create(
+            user=self.company_user,
+            company_name="StageConnect Labs",
+        )
+
+    def test_admin_stats_counts_active_offers(self):
+        InternshipOffer.objects.create(
+            company=self.company,
+            title="Stage Django",
+            description="Develop APIs for internships.",
+            required_skills="Python Django REST",
+            status=InternshipOffer.Status.ACTIVE,
+        )
+        InternshipOffer.objects.create(
+            company=self.company,
+            title="Stage React archive",
+            description="Build React interfaces.",
+            required_skills="React TypeScript",
+            status=InternshipOffer.Status.ARCHIVED,
+        )
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.get("/api/users/admin/stats/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["total_students"], 1)
+        self.assertEqual(response.data["total_companies"], 1)
+        self.assertEqual(response.data["total_offers"], 2)
+        self.assertEqual(response.data["active_offers"], 1)
+
+    def test_non_admin_cannot_access_admin_stats(self):
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.get("/api/users/admin/stats/")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

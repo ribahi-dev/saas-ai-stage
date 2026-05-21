@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">AI InternMatch</string>
-    <string name="title_activity_main">AI InternMatch</string>
-    <string name="package_name">com.internmatch.app</string>
-    <string name="custom_url_scheme">com.internmatch.app</string>
+    <string name="app_name">StageConnect</string>
+    <string name="title_activity_main">StageConnect</string>
+    <string name="package_name">com.stageconnect.app</string>
+    <string name="custom_url_scheme">com.stageconnect.app</string>
 </resources>

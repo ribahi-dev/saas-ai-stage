@@ -1,9 +1,5 @@
 import { GoogleLogin } from '@react-oauth/google';
-
-export function isGoogleAuthConfigured(): boolean {
-  const cid = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  return Boolean(cid && String(cid).trim().length > 0);
-}
+import { isGoogleAuthConfigured } from '../services/authConfig';
 
 type GoogleAuthButtonProps = {
   onSuccess: (credential: string) => void;
