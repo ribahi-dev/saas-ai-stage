@@ -1,0 +1,92 @@
+# Script oral - Soutenance PFA
+
+Durée cible : 10 minutes  
+Objectif : raconter une histoire, ne jamais lire les slides.
+
+## 1. Titre - 30 secondes
+
+Bonjour, je vais vous présenter mon projet PFA : une plateforme IA de recommandation de stages et d'emplois.
+
+L'objectif est simple : aider l'étudiant à trouver plus rapidement des opportunités adaptées à son profil, tout en donnant aux entreprises un espace clair pour gérer leurs offres et candidatures.
+
+## 2. Problématique - 1 minute
+
+Aujourd'hui, la recherche de stage est souvent manuelle.
+
+L'étudiant consulte plusieurs sites, compare les offres lui-même, et ne sait pas toujours si son profil correspond réellement à l'offre.
+
+Le problème principal n'est donc pas seulement le manque d'offres, mais le manque de personnalisation et d'explication.
+
+## 3. Objectifs - 1 minute
+
+Le projet vise à passer d'une simple liste d'offres à un assistant intelligent.
+
+La plateforme centralise les offres, analyse le CV, extrait les compétences, recommande les opportunités pertinentes et accompagne l'étudiant avec une lettre de motivation IA et une simulation d'entretien.
+
+Elle couvre aussi le besoin entreprise : publier des offres et gérer les candidatures.
+
+## 4. Solution - 1 minute
+
+Le parcours est volontairement simple : l'étudiant dépose son CV, l'IA extrait les informations importantes, le moteur compare le profil avec les offres, puis affiche des recommandations.
+
+La différence importante est que le système ne donne pas seulement une offre, il explique pourquoi elle est pertinente.
+
+## 5. Architecture - 1 minute 20
+
+Techniquement, le projet repose sur une architecture frontend/backend.
+
+Le frontend est développé avec React, TypeScript, Vite et Tailwind CSS.
+
+Le backend est une API Django REST Framework sécurisée avec JWT, permissions et rôles.
+
+La partie IA/NLP gère l'analyse du CV, le scoring de compatibilité et les fonctionnalités génératives.
+
+Docker Compose prépare le projet à un déploiement plus propre avec une base PostgreSQL cible.
+
+## 6. Moteur IA - 1 minute 20
+
+Le moteur de recommandation combine plusieurs signaux.
+
+Il utilise les compétences extraites du CV, les informations des offres, les préférences utilisateur et un score de contexte.
+
+Par exemple, une offre Django peut être recommandée parce que le CV contient Python, API REST, Git et un niveau junior.
+
+L'objectif est d'avoir une IA utile et explicable, pas seulement un effet de démonstration.
+
+## 7. Démo produit - 1 minute 30
+
+Pour la démonstration, je vais suivre le parcours étudiant.
+
+Je montre d'abord l'upload du CV, puis le profil analysé par l'IA, ensuite les recommandations personnalisées.
+
+Après cela, je montre la candidature, la lettre IA et la simulation d'entretien.
+
+Cette démo prouve que le projet fonctionne comme un produit complet.
+
+## 8. Sécurité et qualité - 1 minute
+
+Le projet ne s'arrête pas à l'interface.
+
+Le backend inclut l'authentification JWT, des permissions par rôle, la validation des fichiers CV, CORS, les variables d'environnement et des headers de sécurité.
+
+Cela montre que l'application est pensée comme une base sérieuse, pas seulement comme une maquette.
+
+## 9. Résultats - 50 secondes
+
+Les résultats montrent que la plateforme est fonctionnelle.
+
+Elle couvre le parcours étudiant, le parcours entreprise, le moteur IA, les recommandations et l'aide à la candidature.
+
+Les indicateurs comme Precision@5, Recall@5 et temps de réponse API permettent de présenter une première évaluation du moteur.
+
+## 10. Perspectives - 50 secondes
+
+Les limites concernent surtout le volume de données réelles, la dépendance à l'IA externe et l'amélioration continue du scoring.
+
+Les perspectives sont l'ajout d'un dashboard avancé, une version mobile et un modèle de recommandation plus personnalisé.
+
+À terme, ce projet peut évoluer vers une vraie plateforme utilisable par les étudiants et les entreprises.
+
+## 11. Questions
+
+Merci pour votre attention. Je suis prête à répondre à vos questions.
